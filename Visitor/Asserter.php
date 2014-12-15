@@ -154,12 +154,19 @@ class Asserter implements Visitor\Visit {
         $name      = $element->getName();
         $arguments = [];
 
-        foreach($element->getArguments() as $argument)
-            $arguments[] = $argument->accept($this, $handle, $eldnah);
+        foreach($element->getArguments() as $argument) {
+            $value = $argument->accept($this, $handle, $eldnah);
+            if ( $element::LAZY_BREAK === $element->lazyEvaluate($value) )
+                break;
+
+            $arguments[] = $value;
+        }
 
         if(false === $this->operatorExists($name))
             throw new Ruler\Exception\Asserter(
                 'Operator %s does not exist.', 1, $name);
+
+        if ( 2 > count($arguments) ) return null;
 
         return $this->getOperator($name)->distributeArguments($arguments);
     }
