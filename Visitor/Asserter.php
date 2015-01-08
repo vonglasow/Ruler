@@ -81,8 +81,8 @@ class Asserter implements Visitor\Visit {
         if(null !== $context)
             $this->setContext($context);
 
-        $this->setOperator('and', function ( $a, $b ) { return $a && $b; });
-        $this->setOperator('or',  function ( $a, $b ) { return $a || $b; });
+        $this->setOperator('and', function ( $a = false, $b  = false ) { return $a && $b; });
+        $this->setOperator('or',  function ( $a = false, $b = false ) { return $a || $b; });
         $this->setOperator('xor', function ( $a, $b ) { return (bool) ($a ^ $b); });
         $this->setOperator('not', function ( $a )     { return !$a; });
         $this->setOperator('=',   function ( $a, $b ) { return $a == $b; });
@@ -135,7 +135,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  mixed
      */
-    public function visitModel ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    public function visitModel ( Ruler\Model $element, &$handle = null, $eldnah = null ) {
 
         return (bool) $element->getExpression()->accept($this, $handle, $eldnah);
     }
@@ -149,7 +149,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  mixed
      */
-    protected function visitOperator ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    protected function visitOperator ( Ruler\Model\Operator $element, &$handle = null, $eldnah = null ) {
 
         $name      = $element->getName();
         $arguments = [];
@@ -166,8 +166,6 @@ class Asserter implements Visitor\Visit {
             throw new Ruler\Exception\Asserter(
                 'Operator %s does not exist.', 1, $name);
 
-        if ( 2 > count($arguments) ) return null;
-
         return $this->getOperator($name)->distributeArguments($arguments);
     }
 
@@ -180,7 +178,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  mixed
      */
-    protected function visitScalar ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    protected function visitScalar ( Ruler\Model\Bag\Scalar $element, &$handle = null, $eldnah = null ) {
 
         return $element->getValue();
     }
@@ -194,7 +192,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  array
      */
-    protected function visitArray ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    protected function visitArray ( Ruler\Model\Bag\RulerArray $element, &$handle = null, $eldnah = null ) {
 
         $out = [];
 
@@ -213,7 +211,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  mixed
      */
-    protected function visitContext ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    protected function visitContext ( Ruler\Model\Bag\Context $element, &$handle = null, $eldnah = null ) {
 
         $context = $this->getContext();
 
