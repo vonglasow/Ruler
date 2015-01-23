@@ -8,7 +8,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2014, Ivan Enderlin. All rights reserved.
+ * Copyright © 2007-2015, Ivan Enderlin. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -45,11 +45,27 @@ use Hoa\Visitor;
  *
  * @author     Stéphane Py <stephane.py@hoa-project.net>
  * @author     Ivan Enderlin <ivan.enderlin@hoa-project.net>
- * @copyright  Copyright © 2007-2014 Stéphane Py, Ivan Enderlin.
+ * @copyright  Copyright © 2007-2015 Stéphane Py, Ivan Enderlin.
  * @license    New BSD License
  */
 
 class Operator implements Visitor\Element {
+
+    /**
+     * Break if operator is Lazy and if the current argument value does not
+     * break the evaluation.
+     *
+     * @const string
+     */
+    const LAZY_BREAK = false;
+
+    /**
+     * Continue if operator is Lazy and if the current argument value breaks
+     * the evaluation or if operator is not lazy.
+     *
+     * @const string
+     */
+    const LAZY_CONTINUE = true;
 
     /**
      * Name.
@@ -72,7 +88,12 @@ class Operator implements Visitor\Element {
      */
     protected $_function  = true;
 
-
+    /**
+     * Use this property to define whether the operator is lazy or not.
+     *
+     * @var \Hoa\Ruler\Model\Operator bool
+     */
+    protected $_lazy = false;
 
     /**
      * Constructor.
@@ -87,6 +108,7 @@ class Operator implements Visitor\Element {
                                   $isFunction = true ) {
 
         $this->setName($name);
+        $this->setLazy($name === 'and' || $name === 'or');
         $this->setArguments($arguments);
         $this->setFunction($isFunction);
 
@@ -175,6 +197,48 @@ class Operator implements Visitor\Element {
     public function isFunction ( ) {
 
         return $this->_function;
+    }
+
+    /**
+     * Set whether the operator is lazy or not.
+     *
+     * @access  protected
+     * @param   bool  $isLazy    Is a lazy or not.
+     * @return  bool
+     */
+    protected function setLazy ( $isLazy ) {
+
+        $old         = $this->_lazy;
+        $this->_lazy = (bool) $isLazy;
+
+        return $old;
+    }
+
+    /**
+     * Check if the operator is lazy or not.
+     *
+     * @access  public
+     * @return  bool
+     */
+    public function isLazy() {
+
+        return $this->_lazy;
+    }
+
+    public function lazyEvaluate ( $value )
+    {
+        switch($this->_name) {
+            case 'and':
+                if(false === $value)
+                    return self::LAZY_BREAK;
+                break;
+            case 'or':
+                if(true === $value)
+                    return self::LAZY_BREAK;
+                break;
+        }
+
+        return self::LAZY_CONTINUE;
     }
 
     /**

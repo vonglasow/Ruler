@@ -8,7 +8,7 @@
  *
  * New BSD License
  *
- * Copyright © 2007-2014, Ivan Enderlin. All rights reserved.
+ * Copyright © 2007-2015, Ivan Enderlin. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -47,7 +47,7 @@ use Hoa\Visitor;
  *
  * @author     Stéphane Py <stephane.py@hoa-project.net>
  * @author     Ivan Enderlin <ivan.enderlin@hoa-project.net>
- * @copyright  Copyright © 2007-2014 Stéphane Py, Ivan Enderlin.
+ * @copyright  Copyright © 2007-2015 Stéphane Py, Ivan Enderlin.
  * @license    New BSD License
  */
 
@@ -81,8 +81,8 @@ class Asserter implements Visitor\Visit {
         if(null !== $context)
             $this->setContext($context);
 
-        $this->setOperator('and', function ( $a, $b ) { return $a && $b; });
-        $this->setOperator('or',  function ( $a, $b ) { return $a || $b; });
+        $this->setOperator('and', function ( $a = false, $b  = false ) { return $a && $b; });
+        $this->setOperator('or',  function ( $a = false, $b = false ) { return $a || $b; });
         $this->setOperator('xor', function ( $a, $b ) { return (bool) ($a ^ $b); });
         $this->setOperator('not', function ( $a )     { return !$a; });
         $this->setOperator('=',   function ( $a, $b ) { return $a == $b; });
@@ -135,7 +135,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  mixed
      */
-    public function visitModel ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    public function visitModel ( Ruler\Model $element, &$handle = null, $eldnah = null ) {
 
         return (bool) $element->getExpression()->accept($this, $handle, $eldnah);
     }
@@ -149,13 +149,18 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  mixed
      */
-    protected function visitOperator ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    protected function visitOperator ( Ruler\Model\Operator $element, &$handle = null, $eldnah = null ) {
 
         $name      = $element->getName();
         $arguments = [];
 
-        foreach($element->getArguments() as $argument)
-            $arguments[] = $argument->accept($this, $handle, $eldnah);
+        foreach($element->getArguments() as $argument) {
+            $value = $argument->accept($this, $handle, $eldnah);
+            if ( $element::LAZY_BREAK === $element->lazyEvaluate($value) )
+                break;
+
+            $arguments[] = $value;
+        }
 
         if(false === $this->operatorExists($name))
             throw new Ruler\Exception\Asserter(
@@ -173,7 +178,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  mixed
      */
-    protected function visitScalar ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    protected function visitScalar ( Ruler\Model\Bag\Scalar $element, &$handle = null, $eldnah = null ) {
 
         return $element->getValue();
     }
@@ -187,7 +192,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  array
      */
-    protected function visitArray ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    protected function visitArray ( Ruler\Model\Bag\RulerArray $element, &$handle = null, $eldnah = null ) {
 
         $out = [];
 
@@ -206,7 +211,7 @@ class Asserter implements Visitor\Visit {
      * @param   mixed                 $eldnah     Handle (not reference).
      * @return  mixed
      */
-    protected function visitContext ( Visitor\Element $element, &$handle = null, $eldnah = null ) {
+    protected function visitContext ( Ruler\Model\Bag\Context $element, &$handle = null, $eldnah = null ) {
 
         $context = $this->getContext();
 
