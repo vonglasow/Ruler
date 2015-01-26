@@ -180,7 +180,6 @@ RESULT;
                 $user         = new \Mock\StdClass(),
                 $user->status = true,
                 $ruler        = new LUT(),
-                $ruler->setAsserter(new LUT\Visitor\Asserter()),
                 $ruler->getDefaultAsserter()->setOperator('logged', function ( $user ) {
                     return $user->status;
                 }),
@@ -191,14 +190,16 @@ RESULT;
                     return $user;
                 },
                 $context['group'] = $this->sample(
-                    //$this->realdom->regex('/customer|guess/')
-                    $this->realdom->regex('/foo|bar/')
+                    $this->realdom->regex('/customer|guess/')
+                    //$this->realdom->regex('/foo|bar/')
                 )
             )
+            ->boolean($user->status)->isTrue()
             ->when($result = $ruler->assert($rule, $context))
             ->then
                 ->boolean($result)
                 ->isFalse()
+            ->string($user->status)->isEqualTo('foo')
             ;
     }
 }
