@@ -172,4 +172,33 @@ RESULT;
                 ->string($result)
                     ->isEqualTo($expectedResult);
     }
+
+    public function case_lazyOperator()
+    {
+        $this
+            ->given(
+                $user         = new \Mock\StdClass(),
+                $user->status = true,
+                $ruler        = new LUT(),
+                $ruler->setAsserter(new LUT\Visitor\Asserter()),
+                $ruler->getDefaultAsserter()->setOperator('logged', function ( $user ) {
+                    return $user->status;
+                }),
+                $rule             = 'group in ["customer", "guest"] and logged(user)',
+                $context          = new LUT\Context(),
+                $context['user']  = function () use ($user) {
+                    $user->status = 'foo';
+                    return $user;
+                },
+                $context['group'] = $this->sample(
+                    //$this->realdom->regex('/customer|guess/')
+                    $this->realdom->regex('/foo|bar/')
+                )
+            )
+            ->when($result = $ruler->assert($rule, $context))
+            ->then
+                ->boolean($result)
+                ->isFalse()
+            ;
+    }
 }
