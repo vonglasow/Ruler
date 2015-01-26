@@ -177,29 +177,30 @@ RESULT;
     {
         $this
             ->given(
-                $user         = new \Mock\StdClass(),
-                $user->status = true,
-                $ruler        = new LUT(),
-                $ruler->getDefaultAsserter()->setOperator('logged', function ( $user ) {
-                    return $user->status;
+                $ruler = new LUT(),
+                $fUse  = false,
+                $gUse  = false,
+                $ruler->getDefaultAsserter()->setOperator('f', function ( $a = false ) use ( &$fUse ) {
+                    $fUse = true;
+                    return $a;
                 }),
-                $rule             = 'group in ["customer", "guest"] and logged(user)',
+                $ruler->getDefaultAsserter()->setOperator('g', function ( $b = false ) use ( &$gUse ) {
+                    $gUse = true;
+                    return $b;
+                }),
+                $rule             = 'f(false) and g(true)',
                 $context          = new LUT\Context(),
-                $context['user']  = function () use ($user) {
-                    $user->status = 'foo';
-                    return $user;
-                },
-                $context['group'] = $this->sample(
-                    $this->realdom->regex('/customer|guess/')
-                    //$this->realdom->regex('/foo|bar/')
-                )
+                $context['true']  = true,
+                $context['false'] = false
             )
-            ->boolean($user->status)->isTrue()
             ->when($result = $ruler->assert($rule, $context))
             ->then
                 ->boolean($result)
                 ->isFalse()
-            ->string($user->status)->isEqualTo('foo')
+                ->boolean($fUse)
+                ->isTrue()
+                ->boolean($gUse)
+                ->isFalse()
             ;
     }
 }
